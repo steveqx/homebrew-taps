@@ -6,7 +6,7 @@ class CorplinkRs < Formula
 
   # 只保留 macOS ARM 架构
   url "https://github.com/PinkD/corplink-rs/releases/download/#{version}/corplink-rs-#{version}-macos-arm64.tar.gz"
-  sha256 "c09e524ec144d058dd34ca0ac7da14b9cd0f3bd32b3b28c65b2f048f51f8d389"
+  sha256 "7ad1991480729231744c82cc8b8d50098ecb80287b0de85244e3185ab40b0947"
 
   def install
     bin.install "corplink-rs"
