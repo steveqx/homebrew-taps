@@ -1,7 +1,7 @@
 class CorplinkRs < Formula
   desc "使用 rust 实现的飞连客户端"
   homepage "https://github.com/PinkD/corplink-rs"
-  version "5.5"
+  version "5.6"
   license "GPL-2.0"
 
   # 只保留 macOS ARM 架构
