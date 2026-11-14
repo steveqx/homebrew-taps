@@ -11,9 +11,8 @@ class MeowRs < Formula
 
   def install
     odie "meow-rs is only available for Apple Silicon macOS" unless OS.mac? && Hardware::CPU.arm?
-
-    archive = "meow-v#{version}-aarch64-apple-darwin"
-    bin.install "#{archive}/meow", "#{archive}/meow-cli"
+    
+    bin.install "meow", "meow-cli"
     (etc/"meow-rs").mkpath
   end
 
