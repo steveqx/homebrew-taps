@@ -1,0 +1,67 @@
+name: Bump formulae
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update formulae from latest releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+
+          # bump <formula> <owner/repo> <tag prefix> <asset name, VERSION = version>
+          bump() {
+            formula=$1 repo=$2 prefix=$3 asset_tpl=$4
+            file="Formula/$formula.rb"
+
+            current=$(sed -n 's/^  version "\(.*\)"$/\1/p' "$file")
+            tag=$(gh api "repos/$repo/releases/latest" --jq .tag_name)
+            version=${tag#"$prefix"}
+
+            if [ "$version" = "$current" ]; then
+              echo "$formula: up to date ($current)"
+              return 0
+            fi
+
+            asset=$(echo "$asset_tpl" | sed "s/VERSION/$version/")
+            digest=$(gh api "repos/$repo/releases/tags/$tag" \
+              --jq ".assets[] | select(.name == \"$asset\") | (.digest // empty)" \
+              | sed 's/^sha256://')
+
+            if [ -z "$digest" ]; then
+              curl -fsSL -o "$RUNNER_TEMP/asset" "https://github.com/$repo/releases/download/$tag/$asset"
+              digest=$(sha256sum "$RUNNER_TEMP/asset" | cut -d' ' -f1)
+            fi
+
+            sed -i \
+              -e "s/^  version \".*\"/  version \"$version\"/" \
+              -e "s/^  sha256 \".*\"/  sha256 \"$digest\"/" \
+              "$file"
+            echo "$formula: $current -> $version"
+          }
+
+          bump corplink-rs PinkD/corplink-rs "" "corplink-rs-VERSION-macos-arm64.tar.gz"
+          bump meow-rs meow-rs/meow-rs v "meow-vVERSION-aarch64-apple-darwin.tar.gz"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula
+          if git diff --staged --quiet; then
+            echo "No formula changes"
+          else
+            git commit -m "chore: bump formulae"
+            git push
+          fi
